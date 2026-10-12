@@ -1,0 +1,9 @@
+# Your login + ports. NEVER commit - the installer creates these locally.
+config.cmd
+config.sh
+
+# Runtime noise, never commit.
+logs/
+*.log
+__pycache__/
+.DS_Store

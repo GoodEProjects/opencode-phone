@@ -1,0 +1,75 @@
+/* Phone explorer overlay, Windows-11 dark look. Only shown from Add project. */
+#pe-root { position: fixed; inset: 0; z-index: 2147483000; background: #191919; color: #eee;
+  display: none; flex-direction: column; font-family: "Segoe UI", -apple-system, system-ui, sans-serif; }
+#pe-root.on { display: flex; }
+body.pe-lock { overflow: hidden; }
+.pe-titlebar { display: flex; align-items: center; gap: 6px; padding: calc(8px + env(safe-area-inset-top)) 8px 6px;
+  background: #202020; border-bottom: 1px solid #2b2b2b; }
+.pe-tb { background: none; border: none; color: #eee; font-size: 18px; min-width: 44px; min-height: 40px;
+  border-radius: 6px; }
+.pe-tb:active { background: #333; }
+.pe-tab { display: flex; align-items: center; gap: 6px; background: #2b2b2b; border-radius: 8px 8px 0 0;
+  padding: 8px 12px; font-size: 14px; max-width: 45vw; overflow: hidden; white-space: nowrap; }
+.pe-sp { flex: 1; }
+.pe-navbar { display: flex; align-items: center; gap: 2px; padding: 6px 8px; background: #202020;
+  border-bottom: 1px solid #2b2b2b; }
+.pe-crumb { flex: 1; display: flex; align-items: center; gap: 2px; background: #191919;
+  border: 1px solid #2b2b2b; border-bottom: 2px solid #4cc2ff; border-radius: 4px;
+  padding: 4px 8px; margin: 0 4px; overflow-x: auto; white-space: nowrap; font-size: 14px; min-height: 40px; }
+.pe-link { background: none; border: none; color: #eee; font-size: 14px; padding: 8px 4px; white-space: nowrap; }
+.pe-link:active { color: #4cc2ff; }
+.pe-sep { color: #777; }
+.pe-search { width: 110px; flex-shrink: 0; }
+.pe-input { width: 100%; font-size: 14px; padding: 9px 10px; border-radius: 4px; border: 1px solid #2b2b2b;
+  border-bottom: 2px solid #4cc2ff; background: #191919; color: #eee; }
+.pe-cmd { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #202020;
+  border-bottom: 1px solid #2b2b2b; }
+.pe-btn { font-size: 14px; padding: 8px 12px; min-height: 40px; border-radius: 6px;
+  border: 1px solid transparent; background: transparent; color: #eee; white-space: nowrap; }
+.pe-btn:active { background: #333; }
+.pe-sm { font-size: 13px; padding: 6px 10px; min-height: 38px; border: 1px solid #444; background: #2b2b2b;
+  flex-shrink: 0; }
+.pe-title { flex: 1; font-size: 14px; color: #ccc; text-align: center; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis; }
+.pe-open-cur { border: 1px solid #4cc2ff; color: #4cc2ff; }
+.pe-body { flex: 1; display: flex; min-height: 0; }
+.pe-side { width: 188px; flex-shrink: 0; overflow-y: auto; border-right: 1px solid #2b2b2b;
+  padding: 6px 4px; font-size: 14px; -webkit-overflow-scrolling: touch; }
+.pe-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pe-msg { min-height: 18px; font-size: 12px; color: #8f8; padding: 2px 12px; }
+.pe-msg.pe-bad { color: #f88; }
+.pe-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 0 10px calc(16px + env(safe-area-inset-bottom)); }
+.pe-trow { display: flex; align-items: center; gap: 6px; padding: 9px 8px; border-radius: 4px;
+  font-size: 14px; word-break: break-all; }
+.pe-trow:active { background: #333; }
+.pe-trow.sel { background: #2b2b2b; border-left: 2px solid #4cc2ff; }
+.pe-tsec { display: flex; align-items: center; gap: 6px; padding: 10px 8px 4px; color: #ccc;
+  font-size: 13px; }
+.pe-caret { color: #888; width: 14px; }
+.pe-tind { width: 20px; }
+.pe-sub { color: #888; font-size: 12px; display: block; }
+.pe-sec { font-size: 13px; font-weight: 600; color: #ccc; margin: 12px 0 6px; }
+.pe-sec .pe-btn { margin-left: 8px; }
+.pe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.pe-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px;
+  border: 1px solid transparent; border-radius: 6px; min-height: 96px; }
+.pe-tile:active { background: #2b2b2b; border-color: #4cc2ff; }
+.pe-tic { height: 44px; display: flex; align-items: center; }
+.pe-tnm { font-size: 12px; text-align: center; word-break: break-word; max-height: 48px; overflow: hidden; }
+.pe-tile .pe-btn { margin-top: 2px; }
+.pe-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; min-height: 48px;
+  border-bottom: 1px solid #232323; }
+.pe-row:active { background: #2b2b2b; }
+.pe-ic { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.pe-nm { flex: 1; font-size: 15px; word-break: break-all; display: flex; flex-direction: column; }
+.pe-empty { color: #777; font-size: 14px; padding: 10px 4px; }
+.pe-pre { background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px; font-size: 13px;
+  overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+.pe-status { padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); font-size: 12px; color: #999;
+  border-top: 1px solid #2b2b2b; background: #202020; }
+.pe-wide { width: 100%; margin: 4px 0 8px; border: 1px solid #4cc2ff; color: #4cc2ff; }
+#pe-live { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 2147482999; background: #1c1c1c; color: #fff; border: 1px solid #4cc2ff; border-radius: 999px;
+  font-size: 15px; padding: 12px 20px; min-height: 48px;
+  font-family: -apple-system, system-ui, sans-serif; }
