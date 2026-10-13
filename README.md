@@ -60,7 +60,6 @@ Same Wi-Fi needs nothing extra. Outside the house you need a way in:
   your machine at all. Skip remote entirely.
 
 ## Security notes (read this)
-
 - The opencode password (`OPENCODE_SERVER_PASSWORD`) is the **only gate**.
   Make it long, never commit `config.cmd`/`config.sh` (gitignored + locked
   to your user), never share the URL + login together.
@@ -72,6 +71,13 @@ Same Wi-Fi needs nothing extra. Outside the house you need a way in:
   finishes. Different sessions are fully independent.
 - No live cross-push between frontends: a message written elsewhere appears
   on your screen via the auto-refresh (seconds), not instantly.
+- **Sign in once:** let your browser save the login (iCloud Keychain /
+  Google autofill) and you won't retype it. For a true one-login-then-never
+  setup in front of a reverse proxy, see `phone-auth/phone-auth.py`: a tiny
+  localhost login service that mints a 1-year cookie, designed to sit
+  behind `auth_request` + `satisfy any` so the password keeps working as a
+  fallback for API clients. Passwords are never stored (salted hash
+  verifier only).
 
 ## Troubleshooting
 
