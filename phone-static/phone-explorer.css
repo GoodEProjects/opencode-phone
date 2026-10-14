@@ -69,6 +69,18 @@ body.pe-lock { overflow: hidden; }
 .pe-status { padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); font-size: 12px; color: #999;
   border-top: 1px solid #2b2b2b; background: #202020; }
 .pe-wide { width: 100%; margin: 4px 0 8px; border: 1px solid #4cc2ff; color: #4cc2ff; }
+/* attachment chips: the app hides x behind hover (no hover on touch) on a 16px dot */
+[data-slot="prompt-attachments"] .group > button[class*="opacity-0"] { opacity: 1 !important; }
+[data-slot="prompt-attachments"] .group > button::after { content: ""; position: absolute; inset: -14px; }
+/* attach button + toast */
+#pe-attach { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 2147482998;
+  width: 60px; height: 60px; border-radius: 50%; border: 1px solid #444; background: #1c1c1c;
+  color: #fff; font-size: 26px; }
+#pe-attach:active { background: #333; }
+#pe-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom));
+  z-index: 2147482999; background: #1c1c1c; color: #fff; border: 1px solid #444; border-radius: 999px;
+  font-size: 14px; padding: 10px 18px; display: none; max-width: 90vw; }
+#pe-toast.on { display: block; }
 #pe-live { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom));
   z-index: 2147482999; background: #1c1c1c; color: #fff; border: 1px solid #4cc2ff; border-radius: 999px;
   font-size: 15px; padding: 12px 20px; min-height: 48px;

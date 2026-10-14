@@ -540,4 +540,80 @@
     }, POLL_MS);
     peEv('live');
   })();
+
+  /* ---------- mobile attachments: picker button + chip-x fix ----------
+     The app's attach flow is paste/drag-drop only (no picker button) and
+     its remove-x is hover-only on a 16px dot (invisible + untappable on
+     touch). This adds: a floating attach button (native picker, works on
+     iOS) feeding the app's own drop pipeline, and a touch-proof x. */
+  (function attach() {
+    var toastT = null;
+    function toast(t) {
+      var d = document.getElementById('pe-toast');
+      if (!d) {
+        d = document.createElement('div');
+        d.id = 'pe-toast';
+        document.body.appendChild(d);
+      }
+      d.textContent = t;
+      d.classList.add('on');
+      clearTimeout(toastT);
+      toastT = setTimeout(function () { d.classList.remove('on'); }, 3500);
+    }
+    // touch-proof remove: real finger press re-fires as real click on badge
+    window.addEventListener('pointerdown', function (e) {
+      var b = e.target && e.target.closest ?
+        e.target.closest('[data-slot="prompt-attachments"] button') : null;
+      if (!b) return;
+      e.preventDefault();
+      e.stopPropagation();
+      try { b.click(); } catch (x) {}
+    }, true);
+    // attach button + native picker
+    var btn = document.createElement('button');
+    btn.id = 'pe-attach';
+    btn.textContent = '📎';
+    btn.setAttribute('aria-label', 'Attach images or files');
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.multiple = true;
+    inp.setAttribute('accept', 'image/*,video/*,.pdf,.txt,.md,.csv,.json,.log');
+    inp.style.display = 'none';
+    document.body.appendChild(btn);
+    document.body.appendChild(inp);
+    btn.addEventListener('click', function () { inp.click(); });
+    // only show where a chat composer can exist (session views)
+    function placeBtn() {
+      btn.style.display = /\/session\//.test(location.pathname) ? '' : 'none';
+    }
+    placeBtn();
+    setInterval(placeBtn, 2000);
+    inp.addEventListener('change', function () {
+      var files = inp.files ? Array.prototype.slice.call(inp.files) : [];
+      inp.value = '';
+      if (!files.length) return;
+      peEv('got' + files.length);
+      var big = files.filter(function (f) { return f.size > 100 * 1024 * 1024; });
+      if (big.length) {
+        toast('File too big for chat (' + big[0].name.slice(0, 24) + ') — use filedrop instead');
+        peEv('dropbig');
+        files = files.filter(function (f) { return f.size <= 100 * 1024 * 1024; });
+        if (!files.length) return;
+      }
+      // find the composer form (else document body); app reads .files
+      var ta = document.querySelector('form textarea');
+      var target = (ta && ta.closest('form')) || document.body;
+      try {
+        var dt = new DataTransfer();
+        files.forEach(function (f) { dt.items.add(f); });
+        var ev = new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true });
+        target.dispatchEvent(ev);
+        peEv('drop' + files.length);
+        toast(files.length === 1 ? 'Attached — tap send' : files.length + ' attached — tap send');
+      } catch (x) {
+        peEv('droperr');
+        toast('Could not attach — copy + paste into the chat instead');
+      }
+    });
+  })();
 })();
