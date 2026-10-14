@@ -62,7 +62,15 @@ def db():
     c = sqlite3.connect(DB)
     if fresh:
         c.execute('CREATE TABLE tokens (th TEXT PRIMARY KEY, user TEXT, exp INTEGER, created INTEGER, ip TEXT)')
+    try:
+        c.execute('CREATE TABLE IF NOT EXISTS links (th TEXT PRIMARY KEY, user TEXT, exp INTEGER, created INTEGER, ip TEXT)')
+    except sqlite3.OperationalError:
+        pass
     c.execute('DELETE FROM tokens WHERE exp < ?', (int(time.time()),))
+    try:
+        c.execute('DELETE FROM links WHERE exp < ?', (int(time.time()),))
+    except sqlite3.OperationalError:
+        pass
     c.commit()
     return c
 
@@ -125,6 +133,36 @@ def mint(user, ip):
     return tok
 
 
+LINK_TTL = 900  # single-use login links live 15 minutes
+
+
+def mint_link(user):
+    tok = secrets.token_urlsafe(24)
+    th = hashlib.sha256(tok.encode()).hexdigest()
+    now = int(time.time())
+    c = db()
+    c.execute('INSERT INTO links VALUES (?,?,?,?,?)', (th, user, now + LINK_TTL, now, '-'))
+    c.commit()
+    c.close()
+    return tok
+
+
+def redeem_link(tok):
+    th = hashlib.sha256(tok.encode()).hexdigest()
+    now = int(time.time())
+    c = db()
+    row = c.execute('SELECT user, exp FROM links WHERE th=?', (th,)).fetchone()
+    if not row:
+        c.close()
+        return None
+    c.execute('DELETE FROM links WHERE th=?', (th,))
+    c.commit()
+    c.close()
+    if row[1] < now:
+        return None
+    return row[0]
+
+
 class H(BaseHTTPRequestHandler):
     server_version = 'x'
     sys_version = ''
@@ -146,6 +184,25 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
         if u.path == '/login':
+            q = urllib.parse.parse_qs(u.query)
+            toks = q.get('token', [])
+            if toks:
+                if throttled(self._ip()):
+                    return self._send(429, LOGIN_PAGE.replace('{msg}', 'Too many tries. Wait 5 minutes.'))
+                user = redeem_link((toks[0] or '')[:128])
+                if user:
+                    tok = mint(user, self._ip())
+                    log('link login ok user=%s ip=%s' % (user, self._ip()))
+                    cookie = '%s=%s; Path=/; Max-Age=%d; Secure; HttpOnly; SameSite=Lax' % (COOKIE, tok, MAX_AGE)
+                    self.send_response(302)
+                    self.send_header('Location', '/')
+                    self.send_header('Set-Cookie', cookie)
+                    self.send_header('Content-Length', '0')
+                    self.end_headers()
+                    return
+                note_fail(self._ip())
+                log('link FAIL ip=%s' % self._ip())
+                return self._send(401, LOGIN_PAGE.replace('{msg}', 'That login link is used or expired.'))
             return self._send(200, LOGIN_PAGE.replace('{msg}', ''))
         if u.path == '/check':
             user = token_user(self.headers.get('Cookie', ''))
@@ -191,5 +248,13 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
+    import sys
+    # Mint a single-use login link: phone-auth.py mint-link <user> <base-url>
+    # (prints ONE line: the URL. Valid 15 min, dies on first use.)
+    if len(sys.argv) == 4 and sys.argv[1] == 'mint-link':
+        os.makedirs(BASE, exist_ok=True)
+        tok = mint_link(sys.argv[2])
+        print('%s/login?token=%s' % (sys.argv[3].rstrip('/'), tok))
+        raise SystemExit(0)
     os.makedirs(BASE, exist_ok=True)
     ThreadingHTTPServer(('127.0.0.1', 14098), H).serve_forever()
