@@ -588,32 +588,79 @@
     }
     placeBtn();
     setInterval(placeBtn, 2000);
+    function uploadFile(file) {
+      return new Promise(function (res, rej) {
+        var x = new XMLHttpRequest();
+        x.open('POST', '/upload/?filename=' + encodeURIComponent(file.name), true);
+        x.upload.onprogress = function (e) {
+          if (e.lengthComputable) toast('Uploading ' + Math.round(e.loaded / e.total * 100) + '%');
+        };
+        x.onload = function () {
+          try {
+            var r = JSON.parse(x.responseText);
+            if (x.status === 200 && r && r.ok) res(r);
+            else rej(new Error('http ' + x.status));
+          } catch (e) { rej(e); }
+        };
+        x.onerror = function () { rej(new Error('net')); };
+        x.send(file);
+      });
+    }
+    function dropFilePath(serverPath) {
+      var ta = document.querySelector('form textarea');
+      var target = (ta && ta.closest('form')) || document.body;
+      try {
+        var dt = new DataTransfer();
+        dt.setData('text/plain', 'file:' + serverPath);
+        var ev = new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true });
+        target.dispatchEvent(ev);
+        peEv('droppath');
+        toast('Attached — tap send');
+      } catch (x) {
+        peEv('droperr');
+        toast('Could not attach — copy + paste into the chat instead');
+      }
+    }
     inp.addEventListener('change', function () {
       var files = inp.files ? Array.prototype.slice.call(inp.files) : [];
       inp.value = '';
       if (!files.length) return;
       peEv('got' + files.length);
-      var big = files.filter(function (f) { return f.size > 100 * 1024 * 1024; });
-      if (big.length) {
-        toast('File too big for chat (' + big[0].name.slice(0, 24) + ') — use filedrop instead');
-        peEv('dropbig');
-        files = files.filter(function (f) { return f.size <= 100 * 1024 * 1024; });
-        if (!files.length) return;
+      var inline = [], remote = [];
+      files.forEach(function (f) {
+        if (/^image\//.test(f.type || '') && f.size <= 25 * 1024 * 1024) inline.push(f);
+        else remote.push(f);
+      });
+      if (inline.length) {
+        // small images: straight into the composer (instant, proven path)
+        var ta = document.querySelector('form textarea');
+        var target = (ta && ta.closest('form')) || document.body;
+        try {
+          var dt = new DataTransfer();
+          inline.forEach(function (f) { dt.items.add(f); });
+          var ev = new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true });
+          target.dispatchEvent(ev);
+          peEv('drop' + inline.length);
+          toast(inline.length === 1 ? 'Attached — tap send' : inline.length + ' attached — tap send');
+        } catch (x) {
+          peEv('droperr');
+          toast('Could not attach — copy + paste into the chat instead');
+        }
       }
-      // find the composer form (else document body); app reads .files
-      var ta = document.querySelector('form textarea');
-      var target = (ta && ta.closest('form')) || document.body;
-      try {
-        var dt = new DataTransfer();
-        files.forEach(function (f) { dt.items.add(f); });
-        var ev = new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true });
-        target.dispatchEvent(ev);
-        peEv('drop' + files.length);
-        toast(files.length === 1 ? 'Attached — tap send' : files.length + ' attached — tap send');
-      } catch (x) {
-        peEv('droperr');
-        toast('Could not attach — copy + paste into the chat instead');
-      }
+      (function next(i) {
+        if (i >= remote.length) return;
+        var f = remote[i];
+        toast('Uploading ' + f.name.slice(0, 24) + '…');
+        uploadFile(f).then(function (r) {
+          peEv('upok');
+          dropFilePath(r.path);
+          next(i + 1);
+        }).catch(function () {
+          peEv('upfail');
+          toast('Upload failed for ' + f.name.slice(0, 24));
+          next(i + 1);
+        });
+      })(0);
     });
   })();
 })();
